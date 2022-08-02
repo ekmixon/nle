@@ -60,6 +60,7 @@ def compare_rollouts(env0, env1, max_rollout_len):
     Assumes that the environments have already been reset.
     """
     step = 0
+    top_ten_msg = "You made the top ten list!"
     while True:
         a = env0.action_space.sample()
         obs0, reward0, done0, info0 = env0.step(a)
@@ -67,7 +68,6 @@ def compare_rollouts(env0, env1, max_rollout_len):
         step += 1
 
         s0, s1 = term_screen(obs0), term_screen(obs1)
-        top_ten_msg = "You made the top ten list!"
         if top_ten_msg in s0:
             assert top_ten_msg in s1
         else:

@@ -125,7 +125,7 @@ class Nethack:
 
         if options is None:
             options = NETHACKOPTIONS
-        self._options = list(options) + ["name:" + playername]
+        self._options = list(options) + [f"name:{playername}"]
         if wizard:
             self._options.append("playmode:debug")
         self._wizard = wizard

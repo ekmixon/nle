@@ -296,15 +296,17 @@ This might contain data that shouldn't be available to agents."""
             )
 
         # Observations we always need.
-        for key in (
-            "glyphs",
-            "blstats",
-            "message",
-            "program_state",
-            "internal",
-        ):
-            if key not in self._observation_keys:
-                self._observation_keys.append(key)
+        self._observation_keys.extend(
+            key
+            for key in (
+                "glyphs",
+                "blstats",
+                "message",
+                "program_state",
+                "internal",
+            )
+            if key not in self._observation_keys
+        )
 
         self._glyph_index = self._observation_keys.index("glyphs")
         self._blstats_index = self._observation_keys.index("blstats")
@@ -328,11 +330,12 @@ This might contain data that shouldn't be available to agents."""
         self.env = nethack.Nethack(
             observation_keys=self._observation_keys,
             options=options,
-            playername="Agent-" + self.character,
+            playername=f"Agent-{self.character}",
             ttyrec=ttyrec,
             wizard=wizard,
             spawn_monsters=spawn_monsters,
         )
+
         self._close_env = weakref.finalize(self, self.env.close)
 
         self._random = random.SystemRandom()
@@ -407,19 +410,10 @@ This might contain data that shouldn't be available to agents."""
             self._quit_game(observation, done)
             done = True
 
-        info = {}
-        # TODO: fix stats
-        # if end_status:
-        #     # stats = self._collect_stats(last_observation, end_status)
-        #     # stats = stats._asdict()
-        #     # stats = {}
-        #     # info["stats"] = stats
-        #
-        #    # if self._stats_logger is not None:
-        #     #     self._stats_logger.writerow(stats)
-
-        info["end_status"] = end_status
-        info["is_ascended"] = self.env.how_done() == nethack.ASCENDED
+        info = {
+            "end_status": end_status,
+            "is_ascended": self.env.how_done() == nethack.ASCENDED,
+        }
 
         return self._get_observation(observation), reward, done, info
 
@@ -494,8 +488,9 @@ This might contain data that shouldn't be available to agents."""
             assert not done, "Game ended unexpectedly"
         else:
             warnings.warn(
-                "Not in moveloop after 1000 tries, aborting (ttyrec: %s)." % new_ttyrec
+                f"Not in moveloop after 1000 tries, aborting (ttyrec: {new_ttyrec})."
             )
+
             return self.reset(wizkit_items=wizkit_items)
 
         return self._get_observation(self.last_observation)
@@ -608,7 +603,7 @@ This might contain data that shouldn't be available to agents."""
             return super().render(mode=mode)
 
     def __repr__(self):
-        return "<%s>" % self.__class__.__name__
+        return f"<{self.__class__.__name__}>"
 
     def _is_episode_end(self, observation):
         """Returns whether the episode has ended.
@@ -643,9 +638,7 @@ This might contain data that shouldn't be available to agents."""
 
             internal = observation[self._internal_index]
             in_yn_function = internal[1]
-            in_getlin = internal[2]
-
-            if in_getlin:  # Game asking for a line of text. We don't do that.
+            if in_getlin := internal[2]:
                 observation, done = self.env.step(ASCII_ESC)
                 continue
 

@@ -108,18 +108,14 @@ class NetHackStaircase(NetHackScore):
 
     def _is_episode_end(self, observation):
         internal = observation[self._internal_index]
-        stairs_down = internal[4]
-        if stairs_down:
+        if stairs_down := internal[4]:
             return self.StepStatus.TASK_SUCCESSFUL
         return self.StepStatus.RUNNING
 
     def _reward_fn(self, last_observation, action, observation, end_status):
         del action  # Unused
         time_penalty = self._get_time_penalty(last_observation, observation)
-        if end_status == self.StepStatus.TASK_SUCCESSFUL:
-            reward = 1
-        else:
-            reward = 0
+        reward = 1 if end_status == self.StepStatus.TASK_SUCCESSFUL else 0
         return reward + time_penalty
 
 
@@ -132,8 +128,7 @@ class NetHackStaircasePet(NetHackStaircase):
 
     def _is_episode_end(self, observation):
         internal = observation[self._internal_index]
-        stairs_down = internal[4]
-        if stairs_down:
+        if stairs_down := internal[4]:
             glyphs = observation[self._glyph_index]
             blstats = observation[self._blstats_index]
             x, y = blstats[:2]

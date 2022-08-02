@@ -226,7 +226,7 @@ for enum_class in [
     Command,
 ]:
     for action in enum_class:
-        _ACTIONS_DICT[action.value] = "%s.%s" % (enum_class.__name__, action.name)
+        _ACTIONS_DICT[action.value] = f"{enum_class.__name__}.{action.name}"
 
 
 def action_id_to_type(action):

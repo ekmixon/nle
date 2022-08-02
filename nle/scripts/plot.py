@@ -109,7 +109,7 @@ def plot_single_ascii(target, width, height, window=-1, xrange=None, yrange=None
     If window > 0, use it to specify the window size for rolling averages.
     xrange and yrange are used to specify the zoom level of the plot.
     """
-    print("plotting %s" % str(target))
+    print(f"plotting {str(target)}")
     df = pd.read_csv(target, sep="\t")
     steps = np.array(df["# Step"])
 
@@ -119,12 +119,13 @@ def plot_single_ascii(target, width, height, window=-1, xrange=None, yrange=None
     returns = np.array(window.mean())
     stderrs = np.array(window.std())
 
-    plot_options = {}
-    plot_options["with"] = "yerrorbars"
-    plot_options["terminal"] = "dumb %d %d ansi" % (width, height)
-    plot_options["tuplesize"] = 3
-    plot_options["title"] = "averaged episode return"
-    plot_options["xlabel"] = "steps"
+    plot_options = {
+        "with": "yerrorbars",
+        "terminal": "dumb %d %d ansi" % (width, height),
+        "tuplesize": 3,
+        "title": "averaged episode return",
+        "xlabel": "steps",
+    }
 
     if xrange is not None:
         plot_options["xrange"] = xrange
@@ -163,9 +164,9 @@ def collect_logs(target):
                 # nothing to plot
                 pass
 
-    if len(dfs) == 0:
+    if not dfs:
         # didn't find any valid tsv logs
-        raise FileNotFoundError("No logs found under %s" % target)
+        raise FileNotFoundError(f"No logs found under {target}")
 
     return dfs
 
@@ -202,7 +203,7 @@ def plot_multiple_ascii(
             try:
                 rewards = np.array(roll.mean())
             except pd.core.base.DataError:
-                print("Error reading file at %s" % name)
+                print(f"Error reading file at {name}")
                 continue
         else:
             rewards = np.array(df["mean_episode_return"])
@@ -220,12 +221,13 @@ def plot_multiple_ascii(
         "Plotting %d runs with window_size %d from %s" % (len(datasets), window, target)
     )
 
-    plot_options = {}
-    plot_options["terminal"] = "dumb %d %d ansi" % (width, height)
-    plot_options["tuplesize"] = 2
-    plot_options["title"] = "averaged episode return"
-    plot_options["xlabel"] = "steps"
-    plot_options["set"] = "key outside below"
+    plot_options = {
+        "terminal": "dumb %d %d ansi" % (width, height),
+        "tuplesize": 2,
+        "title": "averaged episode return",
+        "xlabel": "steps",
+        "set": "key outside below",
+    }
 
     if xrange is not None:
         plot_options["xrange"] = xrange
@@ -253,9 +255,7 @@ def plot(flags):
                 flags.yrange,
             )
         else:
-            raise RuntimeError(
-                "Filetype not recognised (expected .tsv): %s" % target.suffix
-            )
+            raise RuntimeError(f"Filetype not recognised (expected .tsv): {target.suffix}")
     elif (target / "logs.tsv").is_file():
         # next check if this is actually a single run directory with file "logs.tsv"
         plot_single_ascii(

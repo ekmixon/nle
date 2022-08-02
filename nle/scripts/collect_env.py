@@ -71,9 +71,7 @@ def run(command):
 def run_and_read_all(run_lambda, command):
     """Runs command using run_lambda; reads and returns entire output if rc is 0"""
     rc, out, _ = run_lambda(command)
-    if rc != 0:
-        return None
-    return out
+    return None if rc != 0 else out
 
 
 def run_and_parse_first_match(run_lambda, command, regex):
@@ -82,9 +80,7 @@ def run_and_parse_first_match(run_lambda, command, regex):
     if rc != 0:
         return None
     match = re.search(regex, out)
-    if match is None:
-        return None
-    return match.group(1)
+    return None if match is None else match[1]
 
 
 def get_conda_packages(run_lambda):
@@ -93,7 +89,7 @@ def get_conda_packages(run_lambda):
     else:
         grep_cmd = r'grep "torch\|soumith\|mkl\|magma"'
     conda = os.environ.get("CONDA_EXE", "conda")
-    out = run_and_read_all(run_lambda, conda + " list | " + grep_cmd)
+    out = run_and_read_all(run_lambda, f"{conda} list | {grep_cmd}")
     if out is None:
         return out
     # Comment starting at beginning of line
@@ -126,11 +122,8 @@ def get_gpu_info(run_lambda):
         return None
     smi = get_nvidia_smi()
     uuid_regex = re.compile(r" \(UUID: .+?\)")
-    rc, out, _ = run_lambda(smi + " -L")
-    if rc != 0:
-        return None
-    # Anonymize GPUs by removing their UUID
-    return re.sub(uuid_regex, "", out)
+    rc, out, _ = run_lambda(f"{smi} -L")
+    return None if rc != 0 else re.sub(uuid_regex, "", out)
 
 
 def get_running_cuda_version(run_lambda):
@@ -154,11 +147,9 @@ def get_cudnn_version(run_lambda):
         cudnn_cmd = 'ldconfig -p | grep libcudnn | rev | cut -d" " -f1 | rev'
     rc, out, _ = run_lambda(cudnn_cmd)
     # find will return 1 if there are permission errors or if not found
-    if len(out) == 0 or (rc != 1 and rc != 0):
+    if len(out) == 0 or rc not in [1, 0]:
         cl = os.environ.get("CUDNN_LIBRARY")
-        if cl is not None and os.path.isfile(cl):
-            return os.path.realpath(cl)
-        return None
+        return os.path.realpath(cl) if cl is not None and os.path.isfile(cl) else None
     files = set()
     for fn in out.split("\n"):
         fn = os.path.realpath(fn)  # eliminate symbolic links
@@ -171,7 +162,7 @@ def get_cudnn_version(run_lambda):
     if len(files) == 1:
         return files[0]
     result = "\n".join(files)
-    return "Probably one of the following:\n{}".format(result)
+    return f"Probably one of the following:\n{result}"
 
 
 def get_nvidia_smi():
@@ -218,15 +209,12 @@ def check_release_file(run_lambda):
 def get_os(run_lambda):
     platform = get_platform()
 
-    if platform == "win32" or platform == "cygwin":
+    if platform in ["win32", "cygwin"]:
         return get_windows_version(run_lambda)
 
     if platform == "darwin":
         version = get_mac_version(run_lambda)
-        if version is None:
-            return None
-        return "Mac OSX {}".format(version)
-
+        return None if version is None else f"Mac OSX {version}"
     if platform == "linux":
         # Ubuntu/Debian based
         desc = get_lsb_version(run_lambda)
@@ -235,11 +223,7 @@ def get_os(run_lambda):
 
         # Try reading /etc/*-release
         desc = check_release_file(run_lambda)
-        if desc is not None:
-            return desc
-
-        return platform
-
+        return desc if desc is not None else platform
     # Unknown platform
     return platform
 
@@ -251,7 +235,7 @@ def get_pip_packages(run_lambda):
             grep_cmd = r'findstr /R "numpy torch"'
         else:
             grep_cmd = r'grep "torch\|numpy"'
-        return run_and_read_all(run_lambda, pip + " list --format=freeze | " + grep_cmd)
+        return run_and_read_all(run_lambda, f"{pip} list --format=freeze | {grep_cmd}")
 
     if not PY3:
         return "pip", run_with_pip("pip")
@@ -265,10 +249,7 @@ def get_pip_packages(run_lambda):
         return "pip", out2
 
     if num_pips == 1:
-        if out2 is not None:
-            return "pip", out2
-        return "pip3", out3
-
+        return ("pip", out2) if out2 is not None else ("pip3", out3)
     # num_pips is 2. Return pip3 by default b/c that most likely
     # is the one associated with Python 3
     return "pip3", out3
@@ -278,11 +259,7 @@ def get_env_info():
     run_lambda = run
     pip_version, pip_list_output = get_pip_packages(run_lambda)
 
-    if NLE_AVAILABLE:
-        nle_version = nle.__version__
-    else:
-        nle_version = "N/A"
-
+    nle_version = nle.__version__ if NLE_AVAILABLE else "N/A"
     if TORCH_AVAILABLE:
         torch_version_str = torch.__version__
         torch_debug_mode_str = torch.version.debug
@@ -297,7 +274,7 @@ def get_env_info():
         nle_version=nle_version,
         torch_version=torch_version_str,
         is_debug_build=torch_debug_mode_str,
-        python_version="{}.{}".format(sys.version_info[0], sys.version_info[1]),
+        python_version=f"{sys.version_info[0]}.{sys.version_info[1]}",
         is_cuda_available=cuda_available_str,
         cuda_compiled_version=cuda_version_str,
         cuda_runtime_version=get_running_cuda_version(run_lambda),
@@ -358,9 +335,7 @@ def pretty_str(envinfo):
         return "\n".join(updated_lines)
 
     def replace_if_empty(text, replacement="No relevant packages"):
-        if text is not None and len(text) == 0:
-            return replacement
-        return text
+        return replacement if text is not None and len(text) == 0 else text
 
     def maybe_start_on_next_line(string):
         # If `string` is multiline, prepend a \n to it.

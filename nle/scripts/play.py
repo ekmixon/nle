@@ -40,24 +40,15 @@ def no_echo():
 
 
 def get_action(env, is_raw_env):
-    if FLAGS.mode == "random":
-        if not is_raw_env:
-            action = env.action_space.sample()
-        else:
-            action = random.choice(_ACTIONS)
-            print(action)
-    elif FLAGS.mode == "human":
+    if FLAGS.mode == "human":
         while True:
             with no_echo():
                 ch = ord(os.read(0, 1))
             if ch in [nethack.C("c")]:
-                print("Received exit code {}. Aborting.".format(ch))
+                print(f"Received exit code {ch}. Aborting.")
                 return None
             try:
-                if is_raw_env:
-                    action = ch
-                else:
-                    action = env._actions.index(ch)
+                action = ch if is_raw_env else env._actions.index(ch)
                 break
             except ValueError:
                 print(
@@ -66,7 +57,12 @@ def get_action(env, is_raw_env):
                 )
                 if not FLAGS.print_frames_separately:
                     print("\033[2A")  # Go up 2 lines.
-                continue
+    elif FLAGS.mode == "random":
+        if not is_raw_env:
+            action = env.action_space.sample()
+        else:
+            action = random.choice(_ACTIONS)
+            print(action)
     return action
 
 
@@ -106,18 +102,7 @@ def play():
 
     while True:
         if not FLAGS.no_render:
-            if not is_raw_env:
-                print("-" * 8 + " " * 71)
-                print(f"Previous reward: {str(reward):64s}")
-                act_str = repr(env._actions[action]) if action is not None else ""
-                print(f"Previous action: {str(act_str):64s}")
-                print("-" * 8)
-                env.render(FLAGS.render_mode)
-                print("-" * 8)
-                print(obs["blstats"])
-                if not FLAGS.print_frames_separately:
-                    print("\033[33A")  # Go up 33 lines.
-            else:
+            if is_raw_env:
                 print("Previous action:", action)
                 _, chars, _, _, blstats, message, *_ = obs
                 msg = bytes(message)
@@ -126,6 +111,17 @@ def play():
                     print(line.tobytes().decode("utf-8"))
                 print(blstats)
 
+            else:
+                print("-" * 8 + " " * 71)
+                print(f"Previous reward: {str(reward):64s}")
+                act_str = repr(env._actions[action]) if action is not None else ""
+                print(f"Previous action: {act_str:64s}")
+                print("-" * 8)
+                env.render(FLAGS.render_mode)
+                print("-" * 8)
+                print(obs["blstats"])
+                if not FLAGS.print_frames_separately:
+                    print("\033[33A")  # Go up 33 lines.
         action = get_action(env, is_raw_env)
 
         if action is None:
@@ -255,9 +251,8 @@ def main():
             FLAGS.seeds = ast.literal_eval(FLAGS.seeds)
 
         if FLAGS.savedir == "args":
-            FLAGS.savedir = "{}_{}_{}.zip".format(
-                time.strftime("%Y%m%d-%H%M%S"), FLAGS.mode, FLAGS.env
-            )
+            FLAGS.savedir = f'{time.strftime("%Y%m%d-%H%M%S")}_{FLAGS.mode}_{FLAGS.env}.zip'
+
         elif FLAGS.savedir == "None":
             FLAGS.savedir = None  # Not saving any ttyrecs.
 

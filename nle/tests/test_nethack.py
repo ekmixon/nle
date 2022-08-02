@@ -212,10 +212,8 @@ class TestNethackSomeObs:
             g.close()
 
     def test_message(self, game):
-        messages = []
-
         program_state, message, _ = game.reset()
-        messages.append(message)
+        messages = [message]
         while not program_state[3]:  # in_moveloop.
             (program_state, message, _), done = game.step(nethack.MiscAction.MORE)
             messages.append(message)
@@ -256,8 +254,7 @@ def get_object(name):
         obj = nethack.objclass(index)
         if nethack.OBJ_NAME(obj) == name:
             return obj
-    else:
-        raise ValueError("'%s' not found!" % name)
+    raise ValueError("'%s' not found!" % name)
 
 
 class TestNethackFunctionsAndConstants:
@@ -369,7 +366,7 @@ class TestNethackGlanceObservation:
                     letter = chr(char)
                     glance = "".join(chr(c) for c in desc[i][j] if c != 0)
                     if char == 32:  # no text
-                        assert glance == ""
+                        assert not glance
                         assert (desc[i][j] == 0).all()
                     elif glyph == 2378 and letter == ".":
                         assert glance == "floor of a room"
@@ -380,12 +377,12 @@ class TestNethackGlanceObservation:
                     elif glyph == 397:  # pet dog
                         assert glance == "tame little dog"
                     elif letter in "-":  # illustrate same char, diff descrip
-                        if glyph == 2378:
-                            assert glance == "grave"
-                        elif glyph == 2363:
+                        if glyph == 2363:
                             assert glance == "wall"
                         elif glyph == 2372:
                             assert glance == "open door"
+                        elif glyph == 2378:
+                            assert glance == "grave"
 
 
 class TestNethackTerminalObservation:

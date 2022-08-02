@@ -86,11 +86,7 @@ def wait(diff, speed, drift=0.0):
 
 def read_header(f, peek=False, no_input=False):
     while True:
-        if no_input:
-            header = f.read(12)
-        else:
-            header = f.read(13)
-
+        header = f.read(12) if no_input else f.read(13)
         if not header:
             if peek:
                 # Never return, just wait for more data.
@@ -150,9 +146,7 @@ def process(f):
 
         if CLRCODE.search(data):
             clrscreen.append((lastpos, prev))
-            if jump > 0:
-                jump = 0
-
+            jump = min(jump, 0)
         lastpos = f.seek(0, os.SEEK_CUR)
 
         prev = timestamp

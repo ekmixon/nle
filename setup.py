@@ -52,18 +52,18 @@ class CMakeBuild(build_ext.build_ext):
         cmake_cmd = [
             "cmake",
             str(source_path),
-            "-G%s" % generator,
-            "-DPYTHON_SRC_PARENT=%s" % source_path,
-            # Tell cmake which Python we want.
-            "-DPYTHON_EXECUTABLE=%s" % sys.executable,
-            "-DCMAKE_BUILD_TYPE=%s" % build_type,
-            "-DCMAKE_INSTALL_PREFIX=%s" % sys.base_prefix,
-            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=%s" % output_path,
-            "-DHACKDIR=%s" % hackdir_path,
-            "-DPYTHON_INCLUDE_DIR=%s" % sysconfig.get_python_inc(),
-            "-DPYTHON_LIBRARY=%s" % sysconfig.get_config_var("LIBDIR"),
-            "-DUSE_SEEDING=%s" % use_seeding,
+            f"-G{generator}",
+            f"-DPYTHON_SRC_PARENT={source_path}",
+            f"-DPYTHON_EXECUTABLE={sys.executable}",
+            f"-DCMAKE_BUILD_TYPE={build_type}",
+            f"-DCMAKE_INSTALL_PREFIX={sys.base_prefix}",
+            f"-DCMAKE_LIBRARY_OUTPUT_DIRECTORY={output_path}",
+            f"-DHACKDIR={hackdir_path}",
+            f"-DPYTHON_INCLUDE_DIR={sysconfig.get_python_inc()}",
+            f'-DPYTHON_LIBRARY={sysconfig.get_config_var("LIBDIR")}',
+            f"-DUSE_SEEDING={use_seeding}",
         ]
+
 
         build_cmd = ["cmake", "--build", ".", "--parallel"]
         install_cmd = ["cmake", "--install", "."]
@@ -130,17 +130,15 @@ if __name__ == "__main__":
         pass
 
     if sha != "Unknown" and not os.getenv("NLE_RELEASE_BUILD"):
-        version += "+" + sha[:7]
-    print("Building wheel {}-{}".format(package_name, version))
+        version += f"+{sha[:7]}"
+    print(f"Building wheel {package_name}-{version}")
 
     version_path = os.path.join(cwd, "nle", "version.py")
     with open(version_path, "w") as f:
-        f.write("__version__ = '{}'\n".format(version))
-        f.write("git_version = {}\n".format(repr(sha)))
+        f.write(f"__version__ = '{version}'\n")
+        f.write(f"git_version = {repr(sha)}\n")
 
-    with open("README.md") as f:
-        long_description = f.read()
-
+    long_description = pathlib.Path("README.md").read_text()
     setuptools.setup(
         name=package_name,
         version=version,

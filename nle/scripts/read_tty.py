@@ -6,11 +6,7 @@ import re
 
 def ttyframes(f, tty2=True):
     while True:
-        if tty2:
-            header = f.read(13)
-        else:
-            header = f.read(12)
-
+        header = f.read(13) if tty2 else f.read(12)
         if not isinstance(header, bytes):
             raise IOError("File must be opened in binary mode.")
 
